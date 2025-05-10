@@ -56,15 +56,16 @@ public class PredictiveCompressor {
 
         switch (method.toLowerCase()) {
             case "order-1":
-                return left;
+                return left;  //Predicted(i,j) = Pixel(i,j-1)
             case "order-2":
+                //Predicted(i,j) = Pixel(i,j-1) + Pixel(i-1,j) - Pixel(i-1,j-1)
                 return (row > 0 && col > 0) ? (left + top - topLeft) : (col > 0 ? left : top);
             case "adaptive":
                 double min = Math.min(left, top);
                 double max = Math.max(left, top);
                 if (topLeft < min) return max;
                 if (topLeft >= max) return min;
-                return left + top - topLeft;
+                return left + top - topLeft; //otherwise
             default:
                 throw new IllegalArgumentException("Unsupported method: " + method);
         }
@@ -105,7 +106,8 @@ public class PredictiveCompressor {
         int cols = residuals[0].length;
 
         double[][] result = new double[rows][cols];
-        result[0][0] = residuals[0][0];
+        result[0][0] = residuals[0][0];  //top left
+
         for (int i = 1; i < cols; i++) result[0][i] = residuals[0][i];
         for (int i = 1; i < rows; i++) result[i][0] = residuals[i][0];
 
@@ -125,6 +127,7 @@ public class PredictiveCompressor {
 
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
+                // Error(i,j) = Actual(i,j) - Predicted(i,j)
                 double diff = original[i][j] - decoded[i][j];
                 error += diff * diff;
             }
@@ -148,6 +151,8 @@ public class PredictiveCompressor {
         saveImage(decodedImage, outputFile);
 
         double mse = calcMSE(originalData, decodedImage);
+
+        //Compression Ratio = Original Size / Encoded Size
         double compressionRatio = (double) inputSize / compSize;
 
         System.out.println("Method       : " + method);
